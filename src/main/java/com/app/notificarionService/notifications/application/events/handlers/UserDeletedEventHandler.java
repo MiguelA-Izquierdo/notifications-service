@@ -1,12 +1,11 @@
 package com.app.notificarionService.notifications.application.events.handlers;
 
-import com.app.notificarionService.notifications.application.bus.command.NotificationsCommandBus;
-import com.app.notificarionService.notifications.application.bus.command.SendEmailCommand;
 import com.app.notificarionService.notifications.application.events.UserDeletedEvent;
-import com.app.notificarionService.notifications.domain.model.UserCreatedEmailNotification;
 import com.app.notificarionService.notifications.domain.model.User;
 import com.app.notificarionService.notifications.domain.model.UserDeletedEmailNotification;
+import com.app.notificarionService.notifications.domain.service.EmailService;
 import com.app.notificarionService.notifications.domain.valueObject.notification.Email;
+import jakarta.mail.MessagingException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,10 +13,10 @@ import java.util.List;
 @Service
 public class UserDeletedEventHandler {
 
-  private final NotificationsCommandBus commandBus;
+  private final EmailService emailService;
 
-  public UserDeletedEventHandler(NotificationsCommandBus commandBus) {
-    this.commandBus = commandBus;
+  public UserDeletedEventHandler(EmailService emailService) {
+    this.emailService = emailService;
   }
 
   public void handle(UserDeletedEvent event) {
@@ -36,8 +35,12 @@ public class UserDeletedEventHandler {
       user
     );
 
-    SendEmailCommand command = SendEmailCommand.of(userDeletedEmailNotification);
-    commandBus.dispatch(command);
+    try {
+      emailService.sendEmail(userDeletedEmailNotification);
+    } catch (MessagingException e) {
+      throw new RuntimeException("Error al procesar el evento y enviar el correo", e);
+    }
+
   }
 }
 

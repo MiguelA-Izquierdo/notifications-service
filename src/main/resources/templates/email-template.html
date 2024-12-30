@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .header-container {
+      background-color: #2F2F2F;
+      color: #D4AF37;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo img {
+      height: 40px;
+      width: auto;
+      cursor: pointer;
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin: 0 auto;
+      flex-grow: 1;
+    }
+
+    .content {
+      padding: 10px;
+      box-sizing: border-box;
+      width: 100%;
+      margin: 0;
+    }
+
+    .footer-container {
+      background-color: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #333;
+      margin-top: 20px;
+    }
+
+    .footer-column {
+      margin-bottom: 10px;
+    }
+
+    .footer-links a {
+      text-decoration: none;
+      color: #333;
+      margin: 0 10px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    .social-links a {
+      margin: 0 10px;
+    }
+
+    .social-links svg {
+      height: 24px;
+      width: 24px;
+      fill: #333;
+    }
+
+    .social-links a:hover svg {
+      fill: #D4AF37;
+    }
+
+    @media (max-width: 600px) {
+      .header-container {
+        padding: 10px;
+      }
+      .content {
+        padding: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+<header class="header-container">
+  <h1 class="header-title">Mi sitio web</h1>
+</header>
+
+<div class="content" th:utext="${htmlContent}"></div>
+
+<footer class="footer-container">
+  <span>footer</span>
+</footer>
+</body>
+</html>

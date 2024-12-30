@@ -1,6 +1,6 @@
 package com.app.notificarionService.notifications.application.events;
 
-import com.app.notificarionService.notifications.domain.event.Event;
+import com.app.notificarionService._shared.bus.event.Event;
 
 import java.util.UUID;
 

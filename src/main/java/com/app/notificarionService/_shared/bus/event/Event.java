@@ -1,4 +1,4 @@
-package com.app.notificarionService.notifications.domain.event;
+package com.app.notificarionService._shared.bus.event;
 
 public interface Event<T> {
   String getQueue();

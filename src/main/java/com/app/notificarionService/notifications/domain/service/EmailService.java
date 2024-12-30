@@ -1,10 +1,11 @@
 package com.app.notificarionService.notifications.domain.service;
 
-import com.app.notificarionService.notifications.domain.valueObject.notification.Email;
-import com.app.notificarionService.notifications.domain.valueObject.notification.SubjectEmail;
+import com.app.notificarionService.notifications.domain.model.EmailNotification;
+import jakarta.mail.MessagingException;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface EmailService {
-  void send(List<Email> recipientsEmail, SubjectEmail subject, String htmlBody);
+  CompletableFuture<Void> sendEmail(EmailNotification emailNotification) throws MessagingException;
 }
