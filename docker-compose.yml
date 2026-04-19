@@ -1,0 +1,7 @@
+services:
+  notifications-service:
+    build: .
+    container_name: notifications-service
+    env_file:
+      - .env
+    restart: unless-stopped

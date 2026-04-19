@@ -1,62 +1,149 @@
 # Notification Service
 
-## Overview
+An event-driven microservice that listens to events from a RabbitMQ broker and sends transactional email notifications. It can consume events from any service connected to the same broker. Built with **Spring Boot 3.4** and **Java 17**, following **Domain-Driven Design (DDD)** principles.
 
-The **Notification Service** is an event-driven microservice designed to listen for events from a message broker (RabbitMQ) and send specific email notifications based on the events received. The service is responsible for processing events, determining which type of notification should be sent, and generating the appropriate email content. It follows the principles of Domain-Driven Design (DDD), ensuring that the logic for event handling and email generation is cleanly separated.
+---
 
-## Purpose
+## Tech Stack
 
-The **Notification Service** automatically triggers email notifications in response to specific events. These events are sent to the service via RabbitMQ, and the service processes each event to generate the appropriate email content and send it to the designated recipients. Depending on the event, different types of notifications will be generated, such as user registration emails, password reset emails, or account updates.
+| Technology | Version |
+|---|---|
+| Java | 17 |
+| Spring Boot | 3.4.0 |
+| Spring AMQP (RabbitMQ) | (included in Boot) |
+| Spring Mail | (included in Boot) |
+| Thymeleaf | (included in Boot) |
+| Jackson | 2.17.0 |
+| java-dotenv | 5.2.2 |
 
-Each type of notification has its own logic for generating the email body, allowing the service to handle a variety of use cases. The emails are dynamically created using predefined templates and event-specific data.
-
-## Key Features
-
-- **Event-Driven**: The service listens to RabbitMQ for incoming events, such as user actions or system triggers, which prompt the sending of emails.
-- **Custom Email Notifications**: For each type of event, there is a corresponding notification handler that generates the appropriate email content.
-- **Dynamic Email Generation**: Emails are dynamically generated using templates that are populated with data from the event (e.g., user information, reset links, etc.).
-- **Separation of Concerns**: The service is structured so that event processing, email content generation, and email sending are all clearly separated, following best practices of Domain-Driven Design.
+---
 
 ## Architecture
 
-The **Notification Service** is structured around the concept of listening to events and generating the corresponding email notifications. It consists of the following key components:
+The project is organized following DDD with a clear separation between domain, application, and infrastructure layers:
 
-1. **Event Listener**: The service listens for events that are published to RabbitMQ. Each event corresponds to a specific action or trigger in the system, such as user registration or a password reset request.
+```
+src/main/java/com/app/notificarionService/
+├── _shared/                         # Cross-cutting concerns
+│   └── domain/
+│       └── bus/event/               # Event interface + EventHandler<T> interface
+└── notifications/
+    ├── application/
+    │   └── events/                  # Event DTOs (UserCreatedEvent, UserDeletedEvent)
+    │       └── handlers/            # Event handlers — build the EmailNotification and delegate to EmailService
+    ├── domain/
+    │   ├── exceptions/              # Domain exceptions (ValueObjectValidationException)
+    │   ├── model/                   # Domain models (EmailNotification, User, etc.)
+    │   ├── service/                 # EmailService interface
+    │   └── valueObject/
+    │       └── notification/        # Value objects: Email, SubjectEmail
+    └── infrastructure/
+        ├── messaging/
+        │   ├── config/              # RabbitMQ connection and queue/exchange declarations
+        │   └── inbound/             # BaseEventListener<T> + concrete @RabbitListener entry points
+        ├── serialization/           # Jackson configuration
+        └── service/                 # EmailService implementations (JavaMail, Log)
+```
 
-2. **Notification Handlers**: Once an event is received, the appropriate notification handler is invoked. These handlers are responsible for determining what type of notification to send (e.g., welcome email, password reset email) and generating the HTML content for the email.
+`src/main/resources/templates/` — Thymeleaf HTML email templates.
 
-3. **HTML Email Generation**: The service uses HTML templates and data from the events to generate dynamic email content. Each notification type has a dedicated handler that knows how to populate the email template with the necessary data.
+### Event processing
 
-4. **Email Sending**: After the HTML content is generated, the service uses an email provider to send the email to the recipients specified in the event.
+Each incoming RabbitMQ message flows through two layers before triggering an action:
 
-5. **Infrastructure**: The service integrates with RabbitMQ for event consumption and uses an email service for sending emails. The infrastructure layer handles these integrations and other external dependencies.
+1. **`BaseEventListener<T>`** (abstract, in `infrastructure/messaging/inbound/`) — handles the low-level plumbing: deserializes the raw message body, calls `process()`, and performs manual **ACK** on success or **NACK with requeue** on failure. All concrete listeners extend it.
+2. **`EventHandler<T>`** (interface, in `_shared/bus/event/`) — defines the single `handle(T event)` contract. Concrete handlers (e.g. `UserCreatedEventHandler`) reconstruct the domain objects, build the appropriate `EmailNotification`, and call `EmailService`.
 
-## Workflow
+```
+RabbitMQ message
+  └─▶ ConcreteEventListener (extends BaseEventListener)
+        ├─ deserialize()  →  typed Event DTO
+        └─ process()
+              └─▶ ConcreteEventHandler (implements EventHandler)
+                    └─▶ EmailService.sendEmail(EmailNotification)
+```
 
-1. **Event Reception**: The service listens for events from RabbitMQ.
-2. **Event Processing**: When an event is received, the service processes the event and triggers the appropriate notification handler.
-3. **Email Content Generation**: The notification handler generates the email content based on the event data.
-4. **Email Delivery**: The generated email content is passed to the email service, which sends the email to the recipients.
+Adding support for a new event only requires a new listener + handler pair; `BaseEventListener` and `EmailService` stay untouched.
 
-## Project Structure
+### Email Notification model
 
-The service is structured following Domain-Driven Design (DDD) principles, with clear separation of concerns between different parts of the application.
+`EmailNotification` is an **abstract class** that holds the common structure of any email (recipients, subject, HTML body). Each notification type extends it and implements the `generateHtml()` method with its own content:
 
-### Key Directories:
-- **`application`**: Contains the logic for handling incoming events and triggering the corresponding notification handlers.
-  - **`events`**: Defines the events that trigger notifications.
-  - **`handlers`**: Contains the classes that process the events and generate the corresponding emails.
+```
+EmailNotification  (abstract)
+├── UserCreatedEmailNotification   →  "Bienvenido {name}" — welcome email
+└── UserDeletedEmailNotification   →  "Hasta pronto {name}" — account deletion email
+```
 
-- **`domain`**: Contains domain models and logic for handling notifications and email content generation.
-  - **`model`**: Defines the domain models for notifications, users, and other relevant data.
-  - **`valueObject`**: Represents data objects such as email content or user information.
+Adding a new notification type only requires creating a new subclass and implementing `generateHtml()`. The sending logic in `EmailService` stays untouched.
 
-- **`infrastructure`**: Contains the integration with external services like RabbitMQ and email providers.
-  - **`messaging`**: Manages communication with RabbitMQ for event consumption.
-  - **`emailService`**: Handles the sending of emails via an email provider.
+---
 
-- **`templates`**: Stores HTML templates used by the notification handlers to generate dynamic email content.
+## Integration with Other Services
 
-## Summary
+The Notification Service is a **downstream consumer**: it connects to a RabbitMQ broker and subscribes to queues bound to the exchanges declared by other services. No direct HTTP calls are made between services.
 
-The **Notification Service** is a flexible and scalable microservice designed to handle email notifications in response to events in the system. By leveraging RabbitMQ for event-driven communication and following Domain-Driven Design principles, the service ensures that email notifications are processed in a maintainable and extendable manner. Each event type has its own logic for generating the corresponding email, and the service is easily extensible to accommodate additional notification types or new event-driven use cases in the future.
+```
+Any Service  ──(publishes)──▶  exchange (topic)  ──(routes)──▶  Notification Service
+```
+
+Currently it handles events from the **`userExchange`** exchange, declared by the [User Service](../user-service). Adding support for a new source only requires declaring a new listener and its corresponding queue/binding configuration.
+
+---
+
+## Events Consumed
+
+All events are received from the **`userExchange`** exchange (topic type).
+
+| Event | Routing key | Queue | Trigger | Email sent |
+|---|---|---|---|---|
+| `UserCreatedEvent` | `user.created` | `userCreatedQueue` | User registered in User Service | Welcome email |
+| `UserDeletedEvent` | `user.deleted` | `userDeletedQueue` | User deleted in User Service | Account deletion confirmation |
+
+> **Note:** `userUpdatedQueue` (`user.updated`) is declared and bound but has no handler yet — it is reserved for future use.
+
+---
+
+## Email Service Implementations
+
+There are two implementations of `EmailService`:
+
+| Implementation | Active | Behaviour |
+|---|---|---|
+| `EmailServiceJavaMailImplement` | Production (`@Primary`) | Sends real emails via SMTP using JavaMailSender + Thymeleaf |
+| `EmailServiceLogImplement` | Development fallback | Logs the email content to the console instead of sending |
+
+Emails are sent asynchronously. The HTML body is rendered from `src/main/resources/templates/email-template.html` using Thymeleaf before delivery.
+
+---
+
+## Message Reliability
+
+Messages are acknowledged manually (`ackMode = "MANUAL"`). `BaseEventListener` sends a **basicAck** when processing succeeds and a **basicNack with requeue=true** when it throws, so no message is silently dropped.
+
+When processing fails, RabbitMQ redelivers the message automatically because the nack is issued with `requeue = true`. Retries are broker-driven: the message re-enters the queue until it succeeds or is manually moved. Persistent failures route to the Dead Letter Queue (DLQ) configured per queue.
+
+---
+
+## Deployment
+
+| Mode | Prerequisites | Guide |
+|---|---|---|
+| Docker Compose | Docker | [docs/deployment.md → Docker Compose](docs/deployment.md#docker-compose-recommended) |
+| Local (no Docker) | Java 17, Maven, RabbitMQ | [docs/deployment.md → Local development](docs/deployment.md#local-development-without-docker) |
+
+**Docker Compose quick-start:**
+
+```bash
+cp src/main/resources/.env.example .env.docker   # fill in secrets
+docker compose --env-file .env.docker up --build
+```
+
+**Local quick-start:**
+
+```bash
+cp src/main/resources/.env.example .env          # fill in local values
+./mvnw spring-boot:run
+```
+
+See **[docs/deployment.md](docs/deployment.md)** for the full guide: environment variable reference and RabbitMQ connection details.
