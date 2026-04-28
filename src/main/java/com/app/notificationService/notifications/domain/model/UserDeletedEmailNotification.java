@@ -17,11 +17,7 @@ public class UserDeletedEmailNotification extends EmailNotification<User> {
     }
 
     @Override
-    protected String generateHtml(User user) {
-        return "<h1>¡Adiós, " + user.getName() + "!</h1>\n" +
-                "<p>Sentimos mucho que hayas decidido dejar nuestra comunidad. Siempre valoramos tu presencia y el tiempo que compartiste con nosotros.</p>\n" +
-                "<p>Esperamos que hayas disfrutado de las novedades, beneficios y herramientas que te ofrecimos.</p>\n" +
-                "<p>Si alguna vez decides volver, estaremos encantados de darte la bienvenida nuevamente. Mientras tanto, te deseamos lo mejor en tus próximos pasos.</p>\n" +
-                "<p>No dudes en contactarnos si necesitas algo. ¡Siempre estaremos aquí para ti!</p>\n";
+    public String getTemplateName() {
+        return "emails/user-deleted";
     }
 }

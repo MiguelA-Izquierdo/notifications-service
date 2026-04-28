@@ -5,40 +5,41 @@ import com.app.notificationService.notifications.domain.valueObject.notification
 import java.util.UUID;
 
 public class User {
-  private final UUID id;
-  private final String name;
-  private final String lastName;
-  private final Email email;
 
-  private User(UUID id, String name, String lastName, Email email) {
-    this.id = id;
-    this.name = name;
-    this.lastName = lastName;
-    this.email = email;
-  }
+    private final UUID id;
+    private final String name;
+    private final String lastName;
+    private final Email email;
 
-  public static User of(UUID userId, String userName, String userLastName, String userEmail) {
-    return new User(
-      userId,
-      userName,
-      userLastName,
-      Email.of(userEmail)
-    );
-  }
+    private User(UUID id, String name, String lastName, Email email) {
+        this.id = id;
+        this.name = name;
+        this.lastName = lastName;
+        this.email = email;
+    }
 
-  public UUID getId() {
-    return id;
-  }
+    public static User of(UUID userId, String userName, String userLastName, String userEmail) {
+        return new User(
+            userId,
+            userName,
+            userLastName,
+            Email.of(userEmail)
+        );
+    }
 
-  public String getName() {
-    return name;
-  }
+    public UUID getId() {
+        return id;
+    }
 
-  public String getLastName() {
-    return lastName;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public Email getEmail() {
-    return email;
-  }
+    public String getLastName() {
+        return lastName;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
 }

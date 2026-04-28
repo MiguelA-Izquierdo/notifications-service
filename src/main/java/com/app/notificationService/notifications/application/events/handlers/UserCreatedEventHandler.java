@@ -5,7 +5,6 @@ import com.app.notificationService.notifications.application.events.UserCreatedE
 import com.app.notificationService.notifications.domain.model.User;
 import com.app.notificationService.notifications.domain.model.UserCreatedEmailNotification;
 import com.app.notificationService.notifications.domain.service.EmailService;
-import com.app.notificationService.notifications.domain.valueObject.notification.Email;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class UserCreatedEventHandler implements EventHandler<UserCreatedEvent> {
         UserCreatedEvent.UserPayload payload = event.getPayload();
         User user = User.of(payload.userId(), payload.name(), payload.lastName(), payload.email());
         UserCreatedEmailNotification notification = UserCreatedEmailNotification.of(
-            List.of(Email.of(payload.email())), user
+            List.of(user.getEmail()), user
         );
         emailService.sendEmail(notification);
     }

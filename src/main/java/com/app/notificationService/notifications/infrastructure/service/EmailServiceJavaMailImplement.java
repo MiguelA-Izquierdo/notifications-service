@@ -1,5 +1,6 @@
 package com.app.notificationService.notifications.infrastructure.service;
 
+import com.app.notificationService.notifications.domain.exceptions.EmailSendingException;
 import com.app.notificationService.notifications.domain.model.EmailNotification;
 import com.app.notificationService.notifications.domain.service.EmailService;
 import com.app.notificationService.notifications.domain.valueObject.notification.Email;
@@ -7,6 +8,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,10 +24,14 @@ public class EmailServiceJavaMailImplement implements EmailService {
 
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
+    private final String senderAddress;
 
-    public EmailServiceJavaMailImplement(JavaMailSender javaMailSender, TemplateEngine templateEngine) {
+    public EmailServiceJavaMailImplement(JavaMailSender javaMailSender,
+                                         TemplateEngine templateEngine,
+                                         @Value("${spring.mail.username}") String senderAddress) {
         this.javaMailSender = javaMailSender;
         this.templateEngine = templateEngine;
+        this.senderAddress = senderAddress;
     }
 
     @Override
@@ -33,7 +39,7 @@ public class EmailServiceJavaMailImplement implements EmailService {
         try {
             send(emailNotification);
         } catch (MessagingException e) {
-            throw new RuntimeException("Error al enviar el correo electrónico", e);
+            throw new EmailSendingException("Error al enviar el correo electrónico", e);
         }
     }
 
@@ -44,6 +50,7 @@ public class EmailServiceJavaMailImplement implements EmailService {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
 
+        helper.setFrom(senderAddress);
         for (Email email : emailNotification.getRecipientsEmail()) {
             helper.addTo(email.getEmail());
         }
@@ -51,9 +58,9 @@ public class EmailServiceJavaMailImplement implements EmailService {
 
         Context context = new Context();
         context.setVariable("subject", emailNotification.getSubject().getValue());
-        context.setVariable("htmlContent", emailNotification.getHtmlBody());
+        context.setVariable("data", emailNotification.getData());
 
-        String htmlContent = templateEngine.process("email-template", context);
+        String htmlContent = templateEngine.process(emailNotification.getTemplateName(), context);
         helper.setText(htmlContent, true);
 
         javaMailSender.send(mimeMessage);

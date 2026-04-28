@@ -5,7 +5,6 @@ import com.app.notificationService.notifications.application.events.UserDeletedE
 import com.app.notificationService.notifications.domain.model.User;
 import com.app.notificationService.notifications.domain.model.UserDeletedEmailNotification;
 import com.app.notificationService.notifications.domain.service.EmailService;
-import com.app.notificationService.notifications.domain.valueObject.notification.Email;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class UserDeletedEventHandler implements EventHandler<UserDeletedEvent> {
         UserDeletedEvent.UserPayload payload = event.getPayload();
         User user = User.of(payload.userId(), payload.name(), payload.lastName(), payload.email());
         UserDeletedEmailNotification notification = UserDeletedEmailNotification.of(
-            List.of(Email.of(payload.email())), user
+            List.of(user.getEmail()), user
         );
         emailService.sendEmail(notification);
     }

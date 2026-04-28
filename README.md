@@ -67,7 +67,7 @@ Adding support for a new event only requires a new listener + handler pair; `Bas
 
 ### Email Notification model
 
-`EmailNotification` is an **abstract class** that holds the common structure of any email (recipients, subject, HTML body). Each notification type extends it and implements the `generateHtml()` method with its own content:
+`EmailNotification` is an **abstract class** that holds the common structure of any email (recipients, subject, HTML body). Each notification type extends it and implements the `getTemplateName()` method to return the Thymeleaf template path:
 
 ```
 EmailNotification  (abstract)
@@ -75,7 +75,7 @@ EmailNotification  (abstract)
 └── UserDeletedEmailNotification   →  "Hasta pronto {name}" — account deletion email
 ```
 
-Adding a new notification type only requires creating a new subclass and implementing `generateHtml()`. The sending logic in `EmailService` stays untouched.
+Adding a new notification type only requires creating a new subclass and implementing `getTemplateName()`. The sending logic in `EmailService` stays untouched.
 
 ---
 
@@ -99,8 +99,7 @@ All events are received from the **`userExchange`** exchange (topic type).
 |---|---|---|---|---|
 | `UserCreatedEvent` | `user.created` | `userCreatedQueue` | User registered in User Service | Welcome email |
 | `UserDeletedEvent` | `user.deleted` | `userDeletedQueue` | User deleted in User Service | Account deletion confirmation |
-
-> **Note:** `userUpdatedQueue` (`user.updated`) is declared and bound but has no handler yet — it is reserved for future use.
+| `UserUpdatedEvent` | `user.updated` | `userUpdatedQueue` | User fields updated in User Service | Logs changed fields (old → new value) |
 
 ---
 
@@ -119,9 +118,9 @@ Emails are sent asynchronously. The HTML body is rendered from `src/main/resourc
 
 ## Message Reliability
 
-Messages are acknowledged manually (`ackMode = "MANUAL"`). `BaseEventListener` sends a **basicAck** when processing succeeds and a **basicNack with requeue=true** when it throws, so no message is silently dropped.
+Messages are acknowledged manually (`ackMode = "MANUAL"`). `BaseEventListener` sends a **basicAck** when processing succeeds and a **basicNack with requeue=false** when it throws, so failed messages are routed directly to the Dead Letter Queue (DLQ) without being requeued.
 
-When processing fails, RabbitMQ redelivers the message automatically because the nack is issued with `requeue = true`. Retries are broker-driven: the message re-enters the queue until it succeeds or is manually moved. Persistent failures route to the Dead Letter Queue (DLQ) configured per queue.
+This avoids infinite retry loops at the consumer level. If broker-level retries are needed, a retry exchange with a TTL delay can be configured on the DLQ to re-route messages back to the main queue after a cooldown period.
 
 ---
 
@@ -145,5 +144,7 @@ docker compose --env-file .env.docker up --build
 cp src/main/resources/.env.example .env          # fill in local values
 ./mvnw spring-boot:run
 ```
+
+> This service has no HTTP server (`web-application-type=none`). It runs as a background process connected to RabbitMQ — there is no port to open in a browser.
 
 See **[docs/deployment.md](docs/deployment.md)** for the full guide: environment variable reference and RabbitMQ connection details.

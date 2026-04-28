@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasta pronto</title>
+  <th:block th:replace="~{fragments/email-base :: styles}"></th:block>
+</head>
+<body>
+  <th:block th:replace="~{fragments/email-base :: header}"></th:block>
+
+  <div class="content">
+    <h1>¡Adiós, <span th:text="${data.name}"></span>!</h1>
+    <p>Sentimos mucho que hayas decidido dejar nuestra comunidad. Siempre valoramos tu presencia y el tiempo que compartiste con nosotros.</p>
+    <p>Esperamos que hayas disfrutado de las novedades, beneficios y herramientas que te ofrecimos.</p>
+    <p>Si alguna vez decides volver, estaremos encantados de darte la bienvenida nuevamente. Mientras tanto, te deseamos lo mejor en tus próximos pasos.</p>
+    <p>No dudes en contactarnos si necesitas algo. ¡Siempre estaremos aquí para ti!</p>
+  </div>
+
+  <th:block th:replace="~{fragments/email-base :: footer}"></th:block>
+</body>
+</html>

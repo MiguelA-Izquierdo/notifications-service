@@ -14,9 +14,9 @@ public class EmailServiceLogImplement implements EmailService {
     @Override
     public void sendEmail(EmailNotification<?> emailNotification) {
         // Email.toString() returns a masked value (u***@domain.com) — safe to log
-        logger.info("Correo (simulado) — destinatario: {}, asunto: {}, cuerpo: {}",
+        logger.info("Correo (simulado) — destinatario: {}, asunto: {}, template: {}",
                 emailNotification.getRecipientsEmail(),
                 emailNotification.getSubject(),
-                emailNotification.getHtmlBody());
+                emailNotification.getTemplateName());
     }
 }

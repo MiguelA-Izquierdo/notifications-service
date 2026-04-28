@@ -54,10 +54,10 @@ The service starts at `http://localhost:8081`.
 
 | Variable | Description | Required |
 |---|---|---|
-| `RABBITMQ_USER_SERVICE_HOST` | RabbitMQ host | Yes |
-| `RABBITMQ_USER_SERVICE_PORT` | RabbitMQ port (default `5672`) | Yes |
-| `RABBITMQ_USER_SERVICE_USER_NAME` | RabbitMQ username | Yes |
-| `RABBITMQ_USER_SERVICE_PASSWORD` | RabbitMQ password | Yes |
+| `RABBITMQ_HOST` | RabbitMQ host | Yes |
+| `RABBITMQ_PORT` | RabbitMQ port (default `5672`) | Yes |
+| `RABBITMQ_USERNAME` | RabbitMQ username | Yes |
+| `RABBITMQ_PASSWORD` | RabbitMQ password | Yes |
 | `GMAIL_HOST` | SMTP host (e.g. `smtp.gmail.com`) | Yes |
 | `GMAIL_USERNAME` | SMTP username / sender address | Yes |
 | `GMAIL_PASSWORD` | SMTP password or App Password | Yes |

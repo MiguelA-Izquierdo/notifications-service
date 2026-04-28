@@ -9,12 +9,12 @@ public abstract class EmailNotification<D> {
 
     private final List<Email> recipientsEmail;
     private final SubjectEmail subject;
-    private final String htmlBody;
+    private final D data;
 
     protected EmailNotification(List<Email> recipientsEmail, SubjectEmail subject, D data) {
         this.recipientsEmail = recipientsEmail;
         this.subject = subject;
-        this.htmlBody = generateHtml(data);
+        this.data = data;
     }
 
     public List<Email> getRecipientsEmail() {
@@ -25,9 +25,9 @@ public abstract class EmailNotification<D> {
         return subject;
     }
 
-    public String getHtmlBody() {
-        return htmlBody;
+    public D getData() {
+        return data;
     }
 
-    protected abstract String generateHtml(D data);
+    public abstract String getTemplateName();
 }
