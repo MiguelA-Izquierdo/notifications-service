@@ -6,6 +6,8 @@ import com.app.notificationService.notifications.infrastructure.serialization.Js
 import com.rabbitmq.client.Channel;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -17,7 +19,11 @@ public class UserDeletedEventListener extends BaseEventListener<UserDeletedEvent
     private final JsonSerializationService jsonSerializationService;
 
     public UserDeletedEventListener(JsonSerializationService jsonSerializationService,
-                                    UserDeletedEventHandler eventHandler) {
+                                    UserDeletedEventHandler eventHandler,
+                                    RabbitTemplate rabbitTemplate,
+                                    @Value("${messaging.exchange.retry}") String retryExchange,
+                                    ProcessedMessageStore processedMessageStore) {
+        super(rabbitTemplate, retryExchange, processedMessageStore);
         this.jsonSerializationService = jsonSerializationService;
         this.eventHandler = eventHandler;
     }
@@ -29,11 +35,11 @@ public class UserDeletedEventListener extends BaseEventListener<UserDeletedEvent
 
     @Override
     protected UserDeletedEvent deserialize(Message message) {
-        UserDeletedEvent.UserPayload payload = jsonSerializationService.deserializePayload(
-                new String(message.getBody(), StandardCharsets.UTF_8),
-                UserDeletedEvent.UserPayload.class
+        String rawJson = new String(message.getBody(), StandardCharsets.UTF_8);
+        return new UserDeletedEvent(
+                jsonSerializationService.extractEventId(rawJson),
+                jsonSerializationService.deserializePayload(rawJson, UserDeletedEvent.UserPayload.class)
         );
-        return new UserDeletedEvent(payload);
     }
 
     @Override

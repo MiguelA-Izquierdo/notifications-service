@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class JsonSerializationService {
 
@@ -71,6 +73,18 @@ public class JsonSerializationService {
      *
      * <p>Standard (single-encoded) JSON is returned unchanged.
      */
+    public UUID extractEventId(String rawJson) {
+        try {
+            String json = normalizeJson(rawJson);
+            JsonNode node = objectMapper.readTree(json).get("eventId");
+            if (node == null || node.isNull()) return null;
+            return UUID.fromString(node.asText());
+        } catch (Exception e) {
+            logger.warn("No se pudo extraer eventId del envelope: {}", e.getMessage());
+            return null;
+        }
+    }
+
     private String normalizeJson(String rawJson) {
         String trimmed = rawJson.trim();
         if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {

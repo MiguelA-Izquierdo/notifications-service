@@ -59,7 +59,7 @@ class UserCreatedEventListenerTest {
 
     @Test
     void shouldDelegateToHandler() {
-        UserCreatedEvent event = new UserCreatedEvent(buildPayload());
+        UserCreatedEvent event = new UserCreatedEvent(null, buildPayload());
 
         listener.process(event);
 

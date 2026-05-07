@@ -33,7 +33,7 @@ class UserUpdatedEventListenerTest {
     private UserUpdatedEventListener listener;
 
     private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    private static final String JSON = "{\"userId\":\"00000000-0000-0000-0000-000000000001\",\"changes\":{\"name\":{\"oldValue\":\"Miguel\",\"newValue\":\"Mike\"}}}";
+    private static final String JSON = "{\"userId\":\"00000000-0000-0000-0000-000000000001\",\"email\":\"miguel@example.com\",\"changes\":{\"name\":{\"oldValue\":\"Miguel\",\"newValue\":\"Mike\"}}}";
 
     private Message buildMessage() {
         MessageProperties props = new MessageProperties();
@@ -44,6 +44,7 @@ class UserUpdatedEventListenerTest {
     private UserUpdatedEvent.UserPayload buildPayload() {
         return new UserUpdatedEvent.UserPayload(
             USER_ID,
+            "miguel@example.com",
             Map.of("name", new UserUpdatedEvent.UserPayload.FieldChange("Miguel", "Mike"))
         );
     }
@@ -61,7 +62,7 @@ class UserUpdatedEventListenerTest {
 
     @Test
     void shouldDelegateToHandler() {
-        UserUpdatedEvent event = new UserUpdatedEvent(buildPayload());
+        UserUpdatedEvent event = new UserUpdatedEvent(null, buildPayload());
 
         listener.process(event);
 

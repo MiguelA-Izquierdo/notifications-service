@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bienvenido</title>
+  <title th:text="#{email.user-created.subject(${data.name})}">Bienvenido</title>
   <th:block th:replace="~{fragments/email-base :: styles}"></th:block>
 </head>
 <body>
   <th:block th:replace="~{fragments/email-base :: header}"></th:block>
 
   <div class="content">
-    <h1>¡Hola, <span th:text="${data.name}"></span>!</h1>
-    <p>¡Bienvenido/a a nuestra comunidad! Nos alegra mucho que te hayas unido a nosotros.</p>
-    <p>A partir de ahora, estarás al tanto de todas las novedades, beneficios y herramientas que tenemos para ofrecerte.</p>
-    <p>Si tienes alguna duda o necesitas ayuda, no dudes en contactarnos. ¡Estamos aquí para ti!</p>
+    <h1 th:text="#{email.user-created.greeting(${data.name})}"></h1>
+    <p th:text="#{email.user-created.body1}"></p>
+    <p th:text="#{email.user-created.body2}"></p>
+    <p th:text="#{email.user-created.body3}"></p>
   </div>
 
   <th:block th:replace="~{fragments/email-base :: footer}"></th:block>

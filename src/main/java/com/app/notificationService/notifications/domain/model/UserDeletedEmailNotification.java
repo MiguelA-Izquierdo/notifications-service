@@ -11,8 +11,7 @@ public class UserDeletedEmailNotification extends EmailNotification<User> {
         super(recipientsEmail, subject, user);
     }
 
-    public static UserDeletedEmailNotification of(List<Email> recipientsEmail, User user) {
-        SubjectEmail subject = SubjectEmail.of("Hasta pronto " + user.getName());
+    public static UserDeletedEmailNotification of(List<Email> recipientsEmail, SubjectEmail subject, User user) {
         return new UserDeletedEmailNotification(recipientsEmail, subject, user);
     }
 

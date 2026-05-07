@@ -11,11 +11,10 @@ public class UserUpdatedEventHandler implements EventHandler<UserUpdatedEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(UserUpdatedEventHandler.class);
 
-    // v1: intentionally logs only. Email notification for user updates is planned for a future release.
     @Override
     public void handle(UserUpdatedEvent event) {
         UserUpdatedEvent.UserPayload payload = event.getPayload();
-        payload.changes().forEach((field, change) ->
+        payload.changes().forEach((field, ignored) ->
             logger.info("User {} — field '{}' updated", payload.userId(), field)
         );
     }

@@ -120,7 +120,9 @@ Emails are sent asynchronously. The HTML body is rendered from `src/main/resourc
 
 Messages are acknowledged manually (`ackMode = "MANUAL"`). `BaseEventListener` sends a **basicAck** when processing succeeds and a **basicNack with requeue=false** when it throws, so failed messages are routed directly to the Dead Letter Queue (DLQ) without being requeued.
 
-This avoids infinite retry loops at the consumer level. If broker-level retries are needed, a retry exchange with a TTL delay can be configured on the DLQ to re-route messages back to the main queue after a cooldown period.
+Failed messages go through a **graduated retry schedule** (30 s → 2 min → 10 min) before landing in a parking lot queue for manual review. An **in-memory idempotency store** deduplicates redeliveries using the `eventId` field that publishers must include in the event envelope — preventing duplicate emails when RabbitMQ redelivers an already-processed message.
+
+> See **[docs/messaging.md](docs/messaging.md)** for full details: retry schedule, idempotency design, known limitations of the in-memory store, and instructions for migrating to Redis.
 
 ---
 

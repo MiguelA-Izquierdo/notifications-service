@@ -11,8 +11,7 @@ public class UserCreatedEmailNotification extends EmailNotification<User> {
         super(recipientsEmail, subject, user);
     }
 
-    public static UserCreatedEmailNotification of(List<Email> recipientsEmail, User user) {
-        SubjectEmail subject = SubjectEmail.of("Bienvenido " + user.getName());
+    public static UserCreatedEmailNotification of(List<Email> recipientsEmail, SubjectEmail subject, User user) {
         return new UserCreatedEmailNotification(recipientsEmail, subject, user);
     }
 

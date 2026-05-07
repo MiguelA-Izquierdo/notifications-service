@@ -59,7 +59,7 @@ class UserDeletedEventListenerTest {
 
     @Test
     void shouldDelegateToHandler() {
-        UserDeletedEvent event = new UserDeletedEvent(buildPayload());
+        UserDeletedEvent event = new UserDeletedEvent(null, buildPayload());
 
         listener.process(event);
 

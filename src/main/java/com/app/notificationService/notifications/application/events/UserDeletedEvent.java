@@ -6,10 +6,17 @@ import java.util.UUID;
 
 public class UserDeletedEvent implements Event<UserDeletedEvent.UserPayload> {
 
+    private final UUID eventId;
     private final UserPayload payload;
 
-    public UserDeletedEvent(UserPayload payload) {
+    public UserDeletedEvent(UUID eventId, UserPayload payload) {
+        this.eventId = eventId;
         this.payload = payload;
+    }
+
+    @Override
+    public UUID getEventId() {
+        return eventId;
     }
 
     @Override

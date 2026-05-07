@@ -92,6 +92,45 @@ class JsonSerializationServiceTest {
     }
 
     @Test
+    void shouldExtractEventIdFromEnvelope() {
+        String json = """
+                {
+                  "eventId": "550e8400-e29b-41d4-a716-446655440000",
+                  "exchange": "userExchange",
+                  "routingKey": "user.created",
+                  "payload": "{\\"userId\\":\\"550e8400-e29b-41d4-a716-446655440000\\"}"
+                }
+                """;
+
+        assertThat(service.extractEventId(json))
+                .isEqualTo(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+    }
+
+    @Test
+    void shouldReturnNullWhenEventIdIsMissing() {
+        String json = """
+                {
+                  "exchange": "userExchange",
+                  "payload": "{\\"userId\\":\\"550e8400-e29b-41d4-a716-446655440000\\"}"
+                }
+                """;
+
+        assertThat(service.extractEventId(json)).isNull();
+    }
+
+    @Test
+    void shouldReturnNullWhenEventIdIsInvalidUuid() {
+        String json = """
+                {
+                  "eventId": "not-a-uuid",
+                  "payload": "{}"
+                }
+                """;
+
+        assertThat(service.extractEventId(json)).isNull();
+    }
+
+    @Test
     void shouldThrowWhenJsonIsMalformed() {
         String malformed = "{ not valid json }";
 
