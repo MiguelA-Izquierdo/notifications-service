@@ -77,6 +77,12 @@ public abstract class BaseEventListener<T extends Event<?>> {
         int retryCount = getRetryCount(message);
         String consumerQueue = message.getMessageProperties().getConsumerQueue();
 
+        if (consumerQueue == null) {
+            logger.error("consumerQueue nulo — no se puede programar reintento (delivery tag {})", tag);
+            nackToDlq(channel, tag);
+            return;
+        }
+
         try {
             if (retryCount < MAX_RETRIES) {
                 String routingKey = consumerQueue + RETRY_SUFFIXES[retryCount];

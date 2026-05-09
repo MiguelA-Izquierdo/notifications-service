@@ -96,6 +96,73 @@ The `SET NX EX` command is atomic — no race conditions under concurrent consum
 
 ---
 
+## Circuit breaker
+
+The retry mechanism handles transient SMTP failures well, but it assumes the failures are short-lived. When the SMTP server is fully down, every retry attempt blocks a listener thread for up to 15 seconds (5 s connection timeout + 10 s read timeout) before failing. With three concurrent listeners and messages accumulating in the retry queues, all threads can end up blocked simultaneously.
+
+The circuit breaker addresses this by **short-circuiting calls to the SMTP server** once a failure threshold is reached. Instead of attempting a connection that is known to fail, it rejects the call immediately and lets the retry scheduler handle the backoff.
+
+### State machine
+
+```
+        failure rate > 50 %             wait-duration elapsed
+CLOSED ───────────────────► OPEN ──────────────────────────► HALF-OPEN
+  ▲                                                               │
+  │         probe calls succeed                                  │
+  └───────────────────────────────────────────────────────────────┘
+                (if probes fail, returns to OPEN)
+```
+
+| State | Behaviour |
+|---|---|
+| `CLOSED` | All calls pass through to the SMTP server normally |
+| `OPEN` | Calls are rejected immediately with `CallNotPermittedException` — no connection is attempted |
+| `HALF-OPEN` | A limited number of probe calls are allowed through to test recovery |
+
+### Configuration
+
+```properties
+resilience4j.circuitbreaker.instances.emailService.sliding-window-type=COUNT_BASED
+resilience4j.circuitbreaker.instances.emailService.sliding-window-size=10
+resilience4j.circuitbreaker.instances.emailService.minimum-number-of-calls=5
+resilience4j.circuitbreaker.instances.emailService.failure-rate-threshold=50
+resilience4j.circuitbreaker.instances.emailService.wait-duration-in-open-state=60s
+resilience4j.circuitbreaker.instances.emailService.permitted-number-of-calls-in-half-open-state=2
+resilience4j.circuitbreaker.instances.emailService.automatic-transition-from-open-to-half-open-enabled=true
+resilience4j.circuitbreaker.instances.emailService.record-exceptions[0]=...EmailSendingException
+```
+
+| Property | Value | Meaning |
+|---|---|---|
+| `sliding-window-size` | 10 | Evaluates the last 10 calls |
+| `minimum-number-of-calls` | 5 | Needs at least 5 calls before computing failure rate |
+| `failure-rate-threshold` | 50 | Opens if ≥ 50 % of the window has failed |
+| `wait-duration-in-open-state` | 60 s | Stays `OPEN` for 60 s before trying `HALF-OPEN` |
+| `permitted-number-of-calls-in-half-open-state` | 2 | Sends 2 probe calls; if both succeed the circuit closes |
+| `record-exceptions` | `EmailSendingException` | Only SMTP failures count as failures — exceptions from unrelated bugs do not affect the circuit |
+
+### Integration with the retry mechanism
+
+When the circuit is `OPEN`, `CallNotPermittedException` propagates up through the event handler to `BaseEventListener`, which catches it as a processing failure and schedules a retry (see [Retry mechanism](#retry-mechanism)). The message is not lost — it re-enters the delay queues and will be retried after 30 s, 2 min, and 10 min.
+
+This means the circuit breaker and the retry mechanism are complementary:
+
+- The **circuit breaker** prevents threads from blocking on known-dead SMTP connections.
+- The **retry queues** provide the time window for the SMTP server to recover before the next attempt reaches the circuit.
+
+If the SMTP outage lasts longer than the full retry window (~13 min), messages land in `<queue>.parking` for manual replay. Once the SMTP server recovers, replaying parked messages will succeed immediately because the circuit will have transitioned back to `CLOSED` by then.
+
+### Known limitations
+
+| Scenario | Behaviour |
+|---|---|
+| SMTP recovers within 60 s | Circuit transitions to `HALF-OPEN`; 2 probe calls confirm recovery; circuit closes |
+| SMTP recovers but probes fail | Circuit returns to `OPEN` for another 60 s |
+| Non-SMTP exceptions (e.g. `NullPointerException`) | Do not affect the circuit state — only `EmailSendingException` is recorded |
+| Multiple instances | Each instance has its own in-process circuit; a shared state would require a distributed circuit breaker (e.g. Redis-backed) |
+
+---
+
 ## Notification coverage
 
 | Event | Notification |

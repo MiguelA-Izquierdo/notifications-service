@@ -216,4 +216,17 @@ class BaseEventListenerTest {
         verify(channel).basicAck(DELIVERY_TAG, false);
         assertThat(processCount.get()).isOne();
     }
+
+    @Test
+    void shouldNackToDlqWhenConsumerQueueIsNull() throws IOException {
+        MessageProperties props = new MessageProperties();
+        props.setDeliveryTag(DELIVERY_TAG);
+        Message message = new Message("{}".getBytes(), props);
+
+        listenerThatFailsProcessing().handleMessage(message, channel);
+
+        verify(channel).basicNack(DELIVERY_TAG, false, false);
+        verify(channel, never()).basicAck(anyLong(), anyBoolean());
+        verifyNoInteractions(rabbitTemplate);
+    }
 }

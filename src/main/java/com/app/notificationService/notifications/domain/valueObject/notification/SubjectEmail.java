@@ -22,13 +22,14 @@ final public class SubjectEmail {
         if (value == null) {
             throw new ValueObjectValidationException("SubjectEmail", "SubjectEmail cannot be null");
         }
-        if (value.trim().isEmpty()) {
+        String sanitized = value.replaceAll("[\\r\\n\\x00]", "");
+        if (sanitized.trim().isEmpty()) {
             throw new ValueObjectValidationException("SubjectEmail", "SubjectEmail cannot be blank");
         }
-        if (value.length() < 5 || value.length() > 60) {
+        if (sanitized.length() < 5 || sanitized.length() > 60) {
             throw new ValueObjectValidationException("SubjectEmail", "SubjectEmail must be between 5 and 60 characters");
         }
-        return value;
+        return sanitized;
     }
 
     @Override

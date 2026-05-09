@@ -8,6 +8,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -40,6 +41,7 @@ public class EmailServiceJavaMailImplement implements EmailService {
     }
 
     @Override
+    @CircuitBreaker(name = "emailService")
     public void sendEmail(EmailNotification<?> emailNotification) {
         String recipients = emailNotification.getRecipientsEmail().toString();
         String template = emailNotification.getTemplateName();
